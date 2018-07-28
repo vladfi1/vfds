@@ -1,49 +1,69 @@
 import data.finset
 
 lemma fin_1_ss {n : ℕ} (H : n = 1) : ∀ (m₁ m₂ : fin n), m₁ = m₂ := sorry
+lemma finset_card_1 : ∀ {X : Type} [decidable_eq X] (s : finset X), s.card = 1 → ∀ {x₁ x₂ : X}, x₁ ∈ s → x₂ ∈ s → x₁ = x₂ :=
 
-section tina
+section island
 
+-- the number of people on the island
 parameter (N : ℕ)
 
 @[reducible] def person := fin N
 @[reducible] def timestep := ℕ
 
-parameter is_marked : person → Prop
 parameter knows (t : timestep) (n : person) (p : Prop) : Prop
 
-def common_knowledge_core (t : timestep) (p : Prop) : ℕ → Prop
+def common_knowledge (t : timestep) (p : Prop) : ℕ → Prop
 | 0     := ∀ (n : person), knows t n p
-| (d+1) := ∀ (n : person), knows t n (common_knowledge_core d)
+| (d+1) := ∀ (n : person), knows t n (common_knowledge d)
 
-def common_knowledge (t : timestep) (p : Prop) : Prop := common_knowledge_core t p (N-1)
+variable knows_forall : ∀ {t : timestep} {n : person} {X : Type} {p : X → Prop}, knows t n (∀ x, p x) → ∀ x, knows t n (p x)
+-- TODO(dselsam): variable knows_exists, might not be possible to avoid logical omniscience
 
-variable logical_omniscience : ∀ {t : timestep} {n : person} {p q : Prop}, knows t n p → (p → q) → knows t n q
+parameter marked_ones : finset (fin N)
 
-parameter M : ℕ
+def is_marked (n : person) : Prop := n ∈ marked_ones
 
-variable marked_ones : finset (fin N)
-variable initial_sight   : ∀ (n : person), knows 0 n ((is_marked n ∧ marked_ones.card = M+1) ∨ (¬ is_marked n ∧ marked_ones.card = M))
-variable initial_oracle  : common_knowledge 1 (∃ (m : person), is_marked m)
+variable initial_sight₁   : ∀ (n m : person), n ≠ m → is_marked m → knows 0 n (is_marked m)
+variable initial_sight₂   : ∀ (n m : person), n ≠ m → ¬ is_marked m → knows 0 n (¬ is_marked m)
+
+variable initial_oracle  : common_knowledge 1 (∃ m, is_marked m) N
+
 variable no_one_leaves   : ∀ (n : person) (t : timestep), t < N → ¬ knows t n (is_marked n)
 variable beliefs_persist : ∀ {t : timestep} {n : person} {p : Prop}, knows t n p → knows (t+1) n p
 
+lemma common_knowledge_loosen {t : timestep} {p : Prop} {d₁ d₂ : ℕ} :
+  d₂ < d₁ → common_knowledge t p d₁ → common_knowledge t p d₂ := sorry
+
+theorem base_case_M : marked_ones.card = 1 → ∀ (n : person), is_marked n → knows 1 n (is_marked n) :=
+assume (H_card : marked_ones.card = 1) (n : person) (H_n : is_marked n),
+
+have H₂ : common_knowledge 1 (∃ m, is_marked m) N, from initial_oracle,
+have H₃ : common_knowledge 1 (∃ m, is_marked m) 0, from common_knowledge_loosen sorry H₂,
+
+have H₃ : knows 1 n (∃ m, is_marked m),
+  begin simp only [common_knowledge] at H₃, exact H₃ n end,
+
+begin
+
+end
 /-
-TODO(dselsam, vladfi): separate out the number of people on the island from the number of people who are marked.
-The proper base case is 1 person is marked, with an arbitrary number of non-marked people.
+have H₅ : knows 0 n ((is_marked n ∧ marked_ones.card = M) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = M)),
+  from initial_sight n,
 
-Note: may need to restrict logical omniscience to a few kinds of inferences.
--/
+have H₆ : knows 1 n ((is_marked n ∧ marked_ones.card = M) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = M)),
+  from beliefs_persist H₅,
 
-theorem base_case        : N = 1 → ∀ (n : person), knows 1 n (is_marked n) :=
-assume H₁ : N = 1,
-assume n : person,
-have H₂ : common_knowledge 1 (∃ (m : person), is_marked m), from initial_oracle,
-have H₃ : ∀ (n : person), knows 1 n (∃ m, is_marked m),
-  by simp only [common_knowledge, common_knowledge_core, H₁] at H₂ ; exact H₂,
-have H₄ : knows 1 n (∃ m, is_marked m), from H₃ n,
-have H₅ : (∃ m, is_marked m) → is_marked n,
-  begin intro ex, cases ex with m H_m, rw fin_1_ss H₁ n m, exact H_m end,
+have H₅ : (M > 0) → ((is_marked n ∧ marked_ones.card = M) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = M)) → is_marked n,
+  begin
+  intros H_M_gt_0 H_marked_or,
+  cases H_marked_or with H_and H_and,
+  exact H_and.left,
+  cases H_and with H_not_marked H_card,
+  end,
+
+
 show knows 1 n (is_marked n), from logical_omniscience H₄ H₅
 
-end tina
+-/
+end island
