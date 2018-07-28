@@ -32,7 +32,7 @@ variable beliefs_persist : ∀ {t : timestep} {n : person} {p : Prop}, knows t n
 TODO(dselsam, vladfi): separate out the number of people on the island from the number of people who are marked.
 The proper base case is 1 person is marked, with an arbitrary number of non-marked people.
 
-Note: I think logical omniscience is fine, as long as we don't assert facts that no individual agent knows.
+Note: may need to restrict logical omniscience to a few kinds of inferences.
 -/
 
 theorem base_case        : N = 1 → ∀ (n : person), knows 1 n (is_marked n) :=
