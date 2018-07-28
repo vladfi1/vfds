@@ -17,7 +17,6 @@ def common_knowledge_core (t : timestep) (p : Prop) : ℕ → Prop
 
 def common_knowledge (t : timestep) (p : Prop) : Prop := common_knowledge_core t p N
 
-variable rationality         : ∀ (t : timestep) (n : person) (X : Type) (p : X → Prop), knows t n (∀ x, p x) → ∀ x, knows t n (p x)
 variable logical_omniscience : ∀ {t : timestep} {n : person} {p q : Prop}, knows t n p → (p → q) → knows t n q
 variable initial_oracle  : common_knowledge 1 (∃ (m : person), is_marked m)
 variable no_one_leaves   : ∀ (n : person) (t : timestep), t < N → ¬ knows t n (is_marked n)
