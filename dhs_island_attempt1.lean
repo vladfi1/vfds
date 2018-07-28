@@ -11,11 +11,10 @@ parameter is_marked : person → Prop
 parameter knows (t : timestep) (n : person) (p : Prop) : Prop
 
 def common_knowledge_core (t : timestep) (p : Prop) : ℕ → Prop
-| 0     := true
-| 1     := ∀ (n : person), knows t n p
+| 0     := ∀ (n : person), knows t n p
 | (d+1) := ∀ (n : person), knows t n (common_knowledge_core d)
 
-def common_knowledge (t : timestep) (p : Prop) : Prop := common_knowledge_core t p N
+def common_knowledge (t : timestep) (p : Prop) : Prop := common_knowledge_core t p (N-1)
 
 variable logical_omniscience : ∀ {t : timestep} {n : person} {p q : Prop}, knows t n p → (p → q) → knows t n q
 variable initial_oracle  : common_knowledge 1 (∃ (m : person), is_marked m)
