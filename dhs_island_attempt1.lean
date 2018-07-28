@@ -1,3 +1,5 @@
+import data.finset
+
 lemma fin_1_ss {n : ℕ} (H : n = 1) : ∀ (m₁ m₂ : fin n), m₁ = m₂ := sorry
 
 section tina
@@ -17,6 +19,11 @@ def common_knowledge_core (t : timestep) (p : Prop) : ℕ → Prop
 def common_knowledge (t : timestep) (p : Prop) : Prop := common_knowledge_core t p (N-1)
 
 variable logical_omniscience : ∀ {t : timestep} {n : person} {p q : Prop}, knows t n p → (p → q) → knows t n q
+
+parameter M : ℕ
+
+variable marked_ones : finset (fin N)
+variable initial_sight   : ∀ (n : person), knows 0 n ((is_marked n ∧ marked_ones.card = M+1) ∨ (¬ is_marked n ∧ marked_ones.card = M))
 variable initial_oracle  : common_knowledge 1 (∃ (m : person), is_marked m)
 variable no_one_leaves   : ∀ (n : person) (t : timestep), t < N → ¬ knows t n (is_marked n)
 variable beliefs_persist : ∀ {t : timestep} {n : person} {p : Prop}, knows t n p → knows (t+1) n p
