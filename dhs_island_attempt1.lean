@@ -1,7 +1,7 @@
 import data.finset
 
 lemma fin_1_ss {n : ℕ} (H : n = 1) : ∀ (m₁ m₂ : fin n), m₁ = m₂ := sorry
-lemma finset_card_1 : ∀ {X : Type} [decidable_eq X] (s : finset X), s.card = 1 → ∀ {x₁ x₂ : X}, x₁ ∈ s → x₂ ∈ s → x₁ = x₂ :=
+lemma finset_card_1 : ∀ {X : Type} [decidable_eq X] (s : finset X), s.card = 1 → ∀ {x₁ x₂ : X}, x₁ ∈ s → x₂ ∈ s → x₁ = x₂ := sorry
 
 section island
 
@@ -13,57 +13,62 @@ parameter (N : ℕ)
 
 parameter knows (t : timestep) (n : person) (p : Prop) : Prop
 
+parameter beliefs_persist : ∀ {t : timestep} {n : person} {p : Prop}, knows t n p → knows (t+1) n p
+
+parameters knows_and : ∀ {t : timestep} {n : person} {p q : Prop}, knows t n p → knows t n q → knows t n (p ∧ q)
+
 def common_knowledge (t : timestep) (p : Prop) : ℕ → Prop
 | 0     := ∀ (n : person), knows t n p
 | (d+1) := ∀ (n : person), knows t n (common_knowledge d)
 
-variable knows_forall : ∀ {t : timestep} {n : person} {X : Type} {p : X → Prop}, knows t n (∀ x, p x) → ∀ x, knows t n (p x)
--- TODO(dselsam): variable knows_exists, might not be possible to avoid logical omniscience
+lemma common_knowledge_loosen {t : timestep} {p : Prop} {d₁ d₂ : ℕ} :
+  d₂ < d₁ → common_knowledge t p d₁ → common_knowledge t p d₂ := sorry
+
+parameter all_rational : ∀ {t : timestep} {n : person} {p q : Prop}, knows t n p → (p → q) → knows t n q
 
 parameter marked_ones : finset (fin N)
 
 def is_marked (n : person) : Prop := n ∈ marked_ones
 
-variable initial_sight₁   : ∀ (n m : person), n ≠ m → is_marked m → knows 0 n (is_marked m)
-variable initial_sight₂   : ∀ (n m : person), n ≠ m → ¬ is_marked m → knows 0 n (¬ is_marked m)
+parameter holds : Prop → Prop
 
-variable initial_oracle  : common_knowledge 1 (∃ m, is_marked m) N
+parameter initial_sight :
+  ∀ {n : person} {M : ℕ},
+    holds (marked_ones.card = M) →
+    holds (is_marked n)
+    → knows 0 n ((is_marked n ∧ marked_ones.card = M) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = M))
 
-variable no_one_leaves   : ∀ (n : person) (t : timestep), t < N → ¬ knows t n (is_marked n)
-variable beliefs_persist : ∀ {t : timestep} {n : person} {p : Prop}, knows t n p → knows (t+1) n p
+parameter initial_oracle  : common_knowledge 1 (marked_ones.card > 0) N
 
-lemma common_knowledge_loosen {t : timestep} {p : Prop} {d₁ d₂ : ℕ} :
-  d₂ < d₁ → common_knowledge t p d₁ → common_knowledge t p d₂ := sorry
+parameter no_one_leaves   : ∀ (n : person) (t : timestep), t < N → ¬ knows t n (is_marked n)
 
-theorem base_case_M : marked_ones.card = 1 → ∀ (n : person), is_marked n → knows 1 n (is_marked n) :=
-assume (H_card : marked_ones.card = 1) (n : person) (H_n : is_marked n),
+theorem base_case : holds (marked_ones.card = 1) → ∀ (n : person), holds (is_marked n) → knows 1 n (is_marked n) :=
+assume (H_card : holds (marked_ones.card = 1)) (n : person) (H_n : holds (is_marked n)),
 
-have H₂ : common_knowledge 1 (∃ m, is_marked m) N, from initial_oracle,
-have H₃ : common_knowledge 1 (∃ m, is_marked m) 0, from common_knowledge_loosen sorry H₂,
+have H₁ : common_knowledge 1 (marked_ones.card > 0) N, from initial_oracle,
+have H₂ : common_knowledge 1 (marked_ones.card > 0) 0, from common_knowledge_loosen sorry H₁,
+have H₃ : knows 1 n (marked_ones.card > 0), from H₂ n,
+have H₄ : knows 0 n ((is_marked n ∧ marked_ones.card = 1) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = 1)), from initial_sight H_card H_n,
+have H₅ : knows 1 n ((is_marked n ∧ marked_ones.card = 1) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = 1)), from beliefs_persist H₄,
 
-have H₃ : knows 1 n (∃ m, is_marked m),
-  begin simp only [common_knowledge] at H₃, exact H₃ n end,
+have H₆ : marked_ones.card > 0 → ¬ (¬ is_marked n ∧ marked_ones.card + 1 = 1), from sorry, -- split and arith
+have H₇ : knows 1 n (¬ (¬ is_marked n ∧ marked_ones.card + 1 = 1)), from all_rational H₃ H₆,
+have H₈ : knows 1 n (((is_marked n ∧ marked_ones.card = 1) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = 1)) ∧ (¬ (¬ is_marked n ∧ marked_ones.card + 1 = 1))), from knows_and H₅ H₇,
+have H₉ : (((is_marked n ∧ marked_ones.card = 1) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = 1)) ∧ (¬ (¬ is_marked n ∧ marked_ones.card + 1 = 1))) → is_marked n ∧ marked_ones.card = 1, from sorry, -- propositional reasoning
 
+have H_10 : knows 1 n (is_marked n ∧ marked_ones.card = 1), from all_rational H₈ H₉,
+have H_11 : (is_marked n ∧ marked_ones.card = 1) → is_marked n, from and.left,
+show knows 1 n (is_marked n), from all_rational H_10 H_11
+
+theorem islanders : ∀ (M : ℕ), holds (marked_ones.card = M+1) → ∀ (n : person), holds (is_marked n) → knows (M+1) n (is_marked n) :=
 begin
+intros M H_card n H_n,
+induction M with M IHm,
+apply base_case H_card n H_n,
+exact sorry
+
+
 
 end
-/-
-have H₅ : knows 0 n ((is_marked n ∧ marked_ones.card = M) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = M)),
-  from initial_sight n,
 
-have H₆ : knows 1 n ((is_marked n ∧ marked_ones.card = M) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = M)),
-  from beliefs_persist H₅,
-
-have H₅ : (M > 0) → ((is_marked n ∧ marked_ones.card = M) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = M)) → is_marked n,
-  begin
-  intros H_M_gt_0 H_marked_or,
-  cases H_marked_or with H_and H_and,
-  exact H_and.left,
-  cases H_and with H_not_marked H_card,
-  end,
-
-
-show knows 1 n (is_marked n), from logical_omniscience H₄ H₅
-
--/
 end island
