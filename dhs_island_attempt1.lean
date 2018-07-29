@@ -27,20 +27,21 @@ lemma common_knowledge_loosen {t : timestep} {p : Prop} {d₁ d₂ : ℕ} :
 parameter all_rational : ∀ {t : timestep} {n : person} {p q : Prop}, knows t n p → (p → q) → knows t n q
 
 parameter marked_ones : finset (fin N)
+parameter N_seen : person → ℕ
 
 def is_marked (n : person) : Prop := n ∈ marked_ones
 
 parameter holds : Prop → Prop
 
+-- this needs to be common knowledge, but not clear how to do it
 parameter initial_sight :
   ∀ {n : person} {M : ℕ},
     holds (marked_ones.card = M) →
-    holds (is_marked n)
-    → knows 0 n ((is_marked n ∧ marked_ones.card = M) ∨ (¬ is_marked n ∧ marked_ones.card + 1 = M))
+    common_knowledge 0 (∀ (n : person), (is_marked n ∧ N_seen n + 1 = M) ∨ (¬ is_marked n ∧ N_seen n = M)) N
 
 parameter initial_oracle  : common_knowledge 1 (marked_ones.card > 0) N
 
-parameter no_one_leaves   : ∀ (n : person) (t : timestep), t < N → ¬ knows t n (is_marked n)
+parameter no_one_leaves   : ∀ (t : timestep), t < N → common_knowledge t (∀ (n : person), ¬ knows t n (is_marked n)) N
 
 theorem base_case : ∀ (n : person), holds (is_marked n) → holds (marked_ones.card = 1) → knows 1 n (is_marked n) :=
 assume (n : person) (H_n : holds (is_marked n)) (H_card : holds (marked_ones.card = 1)),
