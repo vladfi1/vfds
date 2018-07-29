@@ -63,7 +63,12 @@ show knows 1 n (is_marked n), from all_rational H_10 H_11
 theorem step_case : ∀ (M : ℕ) (n : person) (H_n : holds (is_marked n)),
                       (holds (marked_ones.card = M+1) → knows (M+1) n (is_marked n))
                     → (holds (marked_ones.card = M+2) → knows (M+2) n (is_marked n)) :=
+assume (M : ℕ) (n : person) (H_n : holds (is_marked n)),
+assume (IH : holds (marked_ones.card = M+1) → knows (M+1) n (is_marked n)),
+have H₁ : common_knowledge 1 (marked_ones.card > 0) N, from initial_oracle,
+have H₂ : common_knowledge 1 (marked_ones.card > 0) (M+1), from common_knowledge_loosen sorry H₁,
 sorry
+
 
 theorem islanders : ∀ (M : ℕ) (n : person) (H_n : holds (is_marked n)), holds (marked_ones.card = M+1) → knows (M+1) n (is_marked n) :=
 begin
