@@ -44,6 +44,8 @@ parameter logical_omniscience : ∀ {t : timestep} {n : person} {p q : Prop}, kn
 parameter marked_ones : finset person
 parameter N_seen : person → ℕ
 
+include marked_ones N_seen
+
 def n_marked : ℕ := marked_ones.card
 def is_marked (n : person) : Prop := n ∈ marked_ones
 
@@ -79,8 +81,13 @@ exact false.rec _ H_false,
 },
 
 intros H_holds_card n H_holds_marked,
-
-
+-- this is common knowledge at timestep 0
+have H_beliefs_all_or : knows (nat.succ M) n (∀ (m : person), (is_marked m ∧ N_seen m + 1 = M) ∨ (¬ is_marked m ∧ N_seen m = M)), from sorry,
+-- application of a known fact
+have H_beliefs_or : knows (nat.succ M) n ((is_marked n ∧ N_seen n + 1 = M) ∨ (¬ is_marked n ∧ N_seen n = M)), from sorry,
+-- since nobody left, n knows that nobody knew they were marked at timestep M
+have H_believes_leave : knows (nat.succ M) n (∀ (m : person), ¬ knows M m (is_marked m)), from sorry,
+--
 
 end
 
