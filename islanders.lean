@@ -59,7 +59,7 @@ include holds_and holds_logical holds_contradiction
 
 variable initial_sight :
 ∀ {M : ℕ}, holds (marked_ones.card = M) →
-  common_knowledge 0 (∀ (n : person), (is_marked n ∧ N_seen n + 1 = M) ∨ (¬ is_marked n ∧ N_seen n = M)) n_people
+  common_knowledge 0 (∀ (n : person), (is_marked n ∧ marked_ones.card = N_seen n + 1) ∨ (¬ is_marked n ∧ marked_ones.card = N_seen n)) n_people
 
 variable initial_oracle : common_knowledge 0 (marked_ones.card > 0) n_people
 
@@ -82,13 +82,20 @@ exact false.rec _ H_false,
 
 intros H_holds_card n H_holds_marked,
 -- this is common knowledge at timestep 0
-have H_beliefs_all_or : knows (nat.succ M) n (∀ (m : person), (is_marked m ∧ N_seen m + 1 = M) ∨ (¬ is_marked m ∧ N_seen m = M)), from sorry,
+have H_beliefs_all_or : knows (nat.succ M) n (∀ (m : person), ((is_marked m ∧ N_seen m + 1 = M) ∨ (¬ is_marked m ∧ N_seen m = M))), from sorry,
 -- application of a known fact
-have H_beliefs_or : knows (nat.succ M) n ((is_marked n ∧ N_seen n + 1 = M) ∨ (¬ is_marked n ∧ N_seen n = M)), from sorry,
+have H_beliefs_or : knows (nat.succ M) n (is_marked n ∧ marked_ones.card = N_seen n + 1) ∨ (¬ is_marked n ∧ marked_ones.card = N_seen n), from sorry,
 -- since nobody left, n knows that nobody knew they were marked at timestep M
 have H_believes_leave : knows (nat.succ M) n (∀ (m : person), ¬ knows M m (is_marked m)), from sorry,
 --
 
+/-
+Recall:
+IHM : holds (n_marked = M) → ∀ (n : person), holds (is_marked n) → knows M n (is_marked n),
+This tells us that holds (n_marked = M) is false, but we already knew that!
+We may need to reason about the agents knowing the inductive hypothesis too!
+
+-/
 end
 
 
